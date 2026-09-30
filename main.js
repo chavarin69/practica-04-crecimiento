@@ -5,12 +5,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 // 1. ESCENA, CÁMARA Y RENDERER
 // ==========================================
 const scene = new THREE.Scene();
-
-// Definimos los colores del cielo para la transición (Día a Azul Rey Obscuro)
 const colorDia = new THREE.Color(0x87CEEB);
-const colorNoche = new THREE.Color(0x0a1931); // Azul rey obscuro / nocturno
-
-// Inicializamos el fondo con el color de día
 scene.background = colorDia; 
 document.body.style.backgroundColor = '#' + colorDia.getHexString();
 
@@ -25,7 +20,7 @@ document.body.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
-controls.target.set(0, 3, 0);
+controls.target.set(0, 2, 0);
 
 // ==========================================
 // 2. ILUMINACIÓN
@@ -43,88 +38,65 @@ scene.add(dirLight);
 // ==========================================
 const interactableObjects = [];
 
-// A) Suelo (Cilindro base)
+// A) Suelo
 const sueloGeo = new THREE.CylinderGeometry(5, 5, 0.5, 32);
 const sueloMat = new THREE.MeshStandardMaterial({ color: 0x8B4513 }); 
 const suelo = new THREE.Mesh(sueloGeo, sueloMat);
 suelo.receiveShadow = true;
-suelo.userData = { 
-    name: "Suelo Agrícola", 
-    type: "Cilindro", 
-    height: "0m", 
-    desc: "Suelo con colores rojizos simulando la tierra rica en hierro de Los Altos de Jalisco."
-};
+suelo.userData = { name: "Suelo Agrícola", type: "Cilindro", desc: "Suelo rico en hierro." };
 scene.add(suelo);
 interactableObjects.push(suelo);
 
-// Grupo principal de la planta
 const agaveGroup = new THREE.Group();
 agaveGroup.position.y = 0.25; 
 scene.add(agaveGroup);
 
-// B) Piña (Esfera estirada)
+// B) Piña
 const pinaGeo = new THREE.SphereGeometry(1.2, 32, 32);
 pinaGeo.scale(1, 1.2, 1); 
+pinaGeo.translate(0, 1.2, 0); // TRUCO: Desplazamos la esfera hacia arriba para que el ancla (0) quede en su base
 const pinaMat = new THREE.MeshStandardMaterial({ color: 0xdbd8a0, roughness: 0.9 });
 const pina = new THREE.Mesh(pinaGeo, pinaMat);
-pina.position.y = 1.2;
+pina.position.y = 0; // Ahora el punto de inicio es exactamente el suelo
 pina.castShadow = true;
-pina.userData = { 
-    name: "Piña (Corazón)", 
-    type: "Esfera", 
-    height: "0.2m - 2.5m", 
-    desc: "Almacena la biomasa y la concentración de azúcares." 
-};
+pina.userData = { name: "Piña (Corazón)", type: "Esfera", desc: "Almacena los azúcares." };
 agaveGroup.add(pina);
 interactableObjects.push(pina);
 
-// C) Quiote (Tallo floral)
+// C) Quiote
 const quioteGeo = new THREE.CylinderGeometry(0.15, 0.2, 5, 16);
-quioteGeo.translate(0, 2.5, 0); 
+quioteGeo.translate(0, 2.5, 0); // El ancla ya estaba en la base
 const quioteMat = new THREE.MeshStandardMaterial({ color: 0x7a9c59 });
 const quiote = new THREE.Mesh(quioteGeo, quioteMat);
-quiote.position.y = 2.4;
+// El quiote brota del centro cuando la piña ya creció. Lo bajamos a 2.0 para que nazca "desde adentro" de la piña.
+quiote.position.y = 2.0; 
 quiote.castShadow = true;
-quiote.userData = { 
-    name: "Quiote (Tallo floral)", 
-    type: "Cilindro", 
-    height: "Hasta 5 metros", 
-    desc: "Tallo que crece rápidamente si no se realiza el desquiote."
-};
+quiote.userData = { name: "Quiote", type: "Cilindro", desc: "Tallo floral que brota al final del ciclo." };
 agaveGroup.add(quiote);
 interactableObjects.push(quiote);
 
-// D) Pencas (Roseta corregida y aumentada)
+// D) Pencas
 const pencasGroup = new THREE.Group();
-const pencaMat = new THREE.MeshStandardMaterial({ color: 0x5a7d71 }); // Azul verdoso
+const pencaMat = new THREE.MeshStandardMaterial({ color: 0x5a7d71 });
 
-const capas = 5; // Aumentamos a 5 capas de hojas
-const pencasPorCapa = 12; // Más hojas por cada capa
+const capas = 5; 
+const pencasPorCapa = 12; 
+const pivotesArray = []; // Guardamos los pivotes para la simulación del viento
 
 for (let i = 0; i < capas; i++) {
     for (let j = 0; j < pencasPorCapa; j++) {
-        // 1. Creamos un pivote en el centro de la piña
         const pivote = new THREE.Group();
-        
-        // 2. Rotamos el pivote como las manecillas de un reloj
         const anguloBase = (j / pencasPorCapa) * Math.PI * 2;
-        const desfase = (i % 2) * (Math.PI / pencasPorCapa); // Intercalar capas
+        const desfase = (i % 2) * (Math.PI / pencasPorCapa); 
         pivote.rotation.y = anguloBase + desfase;
-        
-        // Posición del pivote (las hojas más nuevas/arriba salen más alto)
         pivote.position.y = 0.5 + (i * 0.4);
 
-        // 3. Creamos la geometría de la hoja
-        const alturaPenca = 3.5 + (i * 0.2); // Más altas las del centro
+        const alturaPenca = 3.5 + (i * 0.2); 
         const pencaGeo = new THREE.ConeGeometry(0.4, alturaPenca, 5);
-        pencaGeo.translate(0, alturaPenca / 2, 0); // Mover el ancla a la base
+        pencaGeo.translate(0, alturaPenca / 2, 0); 
         
         const penca = new THREE.Mesh(pencaGeo, pencaMat);
-        
-        // ¡TRUCO!: Aplastamos el cono en el eje Z para que parezca una hoja plana
         penca.scale.set(1, 1, 0.15); 
-        
-        // 4. Inclinamos la hoja hacia afuera (las de abajo más caídas, las de arriba más verticales)
         const inclinacion = (Math.PI / 2.2) - (i * 0.22);
         penca.rotation.x = inclinacion;
         penca.castShadow = true;
@@ -132,17 +104,21 @@ for (let i = 0; i < capas; i++) {
         penca.userData = {
             name: `Penca (Capa ${i+1})`,
             type: "Cono Modificado",
-            height: "1.5m - 3.5m",
-            desc: "Si hay sequía constante, la planta detiene su crecimiento y toma un tono rojizo."
+            desc: "Parte del follaje del agave que captura energía."
         };
         
-        // Añadimos la penca al pivote, y el pivote al grupo de pencas
         pivote.add(penca);
         pencasGroup.add(pivote);
-        interactableObjects.push(penca); // Agregamos solo la malla al raycaster
+        pivotesArray.push(pivote);
+        interactableObjects.push(penca); 
     }
 }
 agaveGroup.add(pencasGroup);
+
+// INICIALIZAR TAMAÑOS EN CERO PARA SIMULAR CRECIMIENTO
+pina.scale.set(0.001, 0.001, 0.001);
+pencasGroup.scale.set(0.001, 0.001, 0.001);
+quiote.scale.set(0.001, 0.001, 0.001);
 
 // ==========================================
 // 4. RAYCASTING Y PANEL DE INFORMACIÓN
@@ -153,7 +129,7 @@ const mouse = new THREE.Vector2();
 const infoPanel = document.getElementById('info-panel');
 const uiName = document.getElementById('info-name');
 const uiType = document.getElementById('info-type');
-const uiHeight = document.getElementById('info-height');
+const uiGrowth = document.getElementById('info-growth');
 const uiDesc = document.getElementById('info-desc');
 
 let selectedObject = null;
@@ -166,7 +142,6 @@ window.addEventListener('pointerdown', (event) => {
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
-    // Verificar intersección solo con los objetos en el arreglo
     const intersects = raycaster.intersectObjects(interactableObjects, false);
 
     if (intersects.length > 0) {
@@ -175,20 +150,27 @@ window.addEventListener('pointerdown', (event) => {
         if (selectedObject && selectedObject.material) {
             selectedObject.material.emissive.copy(originalEmissive);
         }
-
         selectedObject = hit;
         
         if (selectedObject.material) {
             originalEmissive.copy(selectedObject.material.emissive);
-            selectedObject.material.emissive.setHex(0x333333); 
+            selectedObject.material.emissive.setHex(0x444444); 
         }
 
         const data = selectedObject.userData;
         if(data) {
             uiName.innerText = data.name;
             uiType.innerText = data.type;
-            uiHeight.innerText = data.height;
             uiDesc.innerText = data.desc;
+            
+            // Calcular porcentaje de crecimiento dinámico
+            let parentScale = 1;
+            if(data.name.includes("Piña")) parentScale = pina.scale.x;
+            else if(data.name.includes("Penca")) parentScale = pencasGroup.scale.x;
+            else if(data.name.includes("Quiote")) parentScale = quiote.scale.x;
+            else parentScale = 1; // Para el suelo
+            
+            uiGrowth.innerText = Math.round(parentScale * 100);
             infoPanel.classList.remove('hidden');
         }
 
@@ -202,55 +184,52 @@ window.addEventListener('pointerdown', (event) => {
 });
 
 // ==========================================
-// 5. CONTROLES HTML INTERACTIVOS Y AMBIENTE
+// 5. VARIABLES DE ESTADO Y CONTROLES HTML
 // ==========================================
-let isAnimating = true;
+let currentGrowthTime = 0;
+let currentWindTime = 0;
+let isGrowing = true;
+let isWindy = true;
+let globalGrowthSpeed = 1.5;
+let globalWindIntensity = 1.0;
+
+document.getElementById('growth-speed').addEventListener('input', (e) => {
+    globalGrowthSpeed = parseFloat(e.target.value);
+});
+
+document.getElementById('wind-intensity').addEventListener('input', (e) => {
+    globalWindIntensity = parseFloat(e.target.value);
+});
+
+document.getElementById('btn-pause-growth').addEventListener('click', (e) => {
+    isGrowing = !isGrowing;
+    e.target.innerText = isGrowing ? "Pausar Crecimiento" : "Reanudar Crecimiento";
+});
+
+document.getElementById('btn-restart').addEventListener('click', () => {
+    currentGrowthTime = 0;
+    isGrowing = true;
+    document.getElementById('btn-pause-growth').innerText = "Pausar Crecimiento";
+});
 
 document.getElementById('btn-anim').addEventListener('click', (e) => {
-    isAnimating = !isAnimating;
-    e.target.innerText = isAnimating ? "Pausar Viento" : "Reanudar Viento";
+    isWindy = !isWindy;
+    e.target.innerText = isWindy ? "Pausar Viento" : "Reanudar Viento";
+});
+
+let sequiaActiva = false;
+const colorNormal = new THREE.Color(0x5a7d71);
+const colorSequia = new THREE.Color(0xcc5533);
+let targetColor = colorNormal.clone(); // Color al que la planta intentará llegar
+
+document.getElementById('btn-color-leaves').addEventListener('click', () => {
+    sequiaActiva = !sequiaActiva;
+    targetColor = sequiaActiva ? colorSequia : colorNormal;
 });
 
 document.getElementById('btn-camera').addEventListener('click', () => {
     camera.position.copy(initialCameraPos);
-    controls.target.set(0, 3, 0);
-});
-
-let sequiaActiva = false;
-document.getElementById('btn-color-leaves').addEventListener('click', () => {
-    sequiaActiva = !sequiaActiva;
-    const colorDestino = sequiaActiva ? 0xcc5533 : 0x5a7d71; 
-    
-    // Como ahora usamos pivotes (Grupos), usamos traverse para pintar solo las mallas
-    pencasGroup.traverse((child) => {
-        if (child.isMesh) {
-            child.material.color.setHex(colorDestino);
-        }
-    });
-});
-
-document.getElementById('btn-toggle-leaves').addEventListener('click', (e) => {
-    pencasGroup.visible = !pencasGroup.visible;
-    e.target.innerText = pencasGroup.visible ? "Ocultar Pencas" : "Mostrar Pencas";
-});
-
-// NUEVA LÓGICA: Slider controla luz Y color de fondo
-document.getElementById('light-slider').addEventListener('input', (e) => {
-    const val = parseFloat(e.target.value);
-    
-    // 1. Ajustar intensidad de las luces
-    dirLight.intensity = val;
-    ambientLight.intensity = val * 0.4; // Ajuste proporcional
-
-    // 2. Calcular porcentaje (0 a 1) en base al slider (rango 0 a 3)
-    const porcentajeDia = val / 3;
-
-    // 3. Mezclar colores (Lerp): Si es 0% día, es azul obscuro. Si es 100% día, es celeste.
-    const nuevoColorFondo = colorNoche.clone().lerp(colorDia, porcentajeDia);
-    
-    // 4. Aplicarlo a la escena de Three.js y al fondo del body HTML
-    scene.background = nuevoColorFondo;
-    document.body.style.backgroundColor = '#' + nuevoColorFondo.getHexString();
+    controls.target.set(0, 2, 0);
 });
 
 window.addEventListener('resize', () => {
@@ -260,20 +239,72 @@ window.addEventListener('resize', () => {
 });
 
 // ==========================================
-// 6. ANIMACIÓN (BALANCEO POR VIENTO)
+// Controles del Modal de Cuestionario
+// ==========================================
+const qaModal = document.getElementById('qa-modal');
+
+document.getElementById('btn-qa').addEventListener('click', () => {
+    qaModal.classList.remove('hidden');
+});
+
+document.getElementById('btn-close-qa').addEventListener('click', () => {
+    qaModal.classList.add('hidden');
+});
+
+// ==========================================
+// 6. BUCLE DE ANIMACIÓN (CRECIMIENTO Y VIENTO)
 // ==========================================
 const clock = new THREE.Clock();
 
 function animate() {
     requestAnimationFrame(animate);
+    const delta = clock.getDelta();
+    const time = clock.getElapsedTime();
 
-    if (isAnimating) {
-        const time = clock.getElapsedTime();
-        agaveGroup.rotation.z = Math.sin(time * 0.5) * 0.02;
-        agaveGroup.rotation.x = Math.cos(time * 0.3) * 0.02;
+    // 1. Lógica de Crecimiento Controlado
+    if (isGrowing) {
+        // Incrementamos la variable de tiempo general de vida de la planta
+        currentGrowthTime += (delta * globalGrowthSpeed * 2);
+        
+        // Fase 1: Crece la piña (del tiempo 0 al 30)
+        let sPina = Math.min(Math.max(currentGrowthTime / 30, 0.001), 1);
+        pina.scale.set(sPina, sPina, sPina);
+
+        // Fase 2: Crecen las pencas una vez que la piña tiene tamaño (tiempo 20 al 80)
+        let sPencas = Math.min(Math.max((currentGrowthTime - 20) / 60, 0.001), 1);
+        pencasGroup.scale.set(sPencas, sPencas, sPencas);
+
+        // Fase 3: Emerge el Quiote al final del ciclo (tiempo 80 al 120)
+        let sQuiote = Math.min(Math.max((currentGrowthTime - 80) / 40, 0.001), 1);
+        quiote.scale.set(sQuiote, sQuiote, sQuiote);
+    }
+
+    // 2. Simulación de Viento (Ondulación matemática en cada penca)
+    if (isWindy) {
+        currentWindTime += delta; // El reloj del viento solo avanza si no está pausado
+        
+        pivotesArray.forEach((pivote, index) => {
+            const offset = index * 0.2; 
+            pivote.rotation.z = Math.sin(currentWindTime * 2 + offset) * (0.02 * globalWindIntensity);
+        });
+    }
+    
+    // 3. Transición de color progresiva (Sequía)
+    // Lerp mezcla suavemente el color actual del material de las pencas con el targetColor
+    pencaMat.color.lerp(targetColor, delta * 1.5);
+
+    // Actualizar porcentaje en vivo si hay algo seleccionado mientras crece
+    if (selectedObject && isGrowing) {
+        let parentScale = 1;
+        const data = selectedObject.userData;
+        if(data.name.includes("Piña")) parentScale = pina.scale.x;
+        else if(data.name.includes("Penca")) parentScale = pencasGroup.scale.x;
+        else if(data.name.includes("Quiote")) parentScale = quiote.scale.x;
+        uiGrowth.innerText = Math.round(parentScale * 100);
     }
 
     controls.update();
     renderer.render(scene, camera);
 }
+
 animate();

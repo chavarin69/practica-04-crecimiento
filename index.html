@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Práctica 03 - Agave Azul 3D</title>
+    <title>Práctica 04 - Crecimiento Agave Azul</title>
     <link rel="stylesheet" href="style.css">
     
     <!-- Import Map para Three.js -->
@@ -19,18 +19,28 @@
 <body>
     <!-- Panel de Controles HTML -->
     <div id="controls-panel">
-        <h1>Simulador de Agave Azul</h1>
+        <h1>Control de Crecimiento</h1>
         
         <div class="control-group">
-            <button id="btn-anim">Pausar Viento</button>
-            <button id="btn-camera">Reiniciar Cámara</button>
-            <button id="btn-color-leaves">Simular Sequía (Color Pencas)</button>
-            <button id="btn-toggle-leaves">Ocultar Pencas</button>
+            <label for="growth-speed">Velocidad de Crecimiento:</label>
+            <input type="range" id="growth-speed" min="0" max="5" step="0.1" value="1.5">
         </div>
 
         <div class="control-group">
-            <label for="light-slider">Intensidad del Sol:</label>
-            <input type="range" id="light-slider" min="0" max="3" step="0.1" value="1.5">
+            <label for="wind-intensity">Intensidad del Viento:</label>
+            <input type="range" id="wind-intensity" min="0" max="3" step="0.1" value="1">
+        </div>
+
+        <div class="control-group">
+            <button id="btn-pause-growth">Pausar Crecimiento</button>
+            <button id="btn-restart">Reiniciar Planta</button>
+            <button id="btn-anim">Pausar Viento</button>
+            <button id="btn-color-leaves">Simular Sequía (Color)</button>
+            <button id="btn-camera">Reiniciar Cámara</button>
+        </div>
+
+        <div class="control-group" style="margin-top: 15px; border-top: 1px solid #ccc; padding-top: 15px;">
+            <button id="btn-qa" style="background-color: #2c3e50; color: white;">Ver Cuestionario</button>
         </div>
     </div>
 
@@ -39,8 +49,45 @@
         <h2 id="info-name">Nombre de la Parte</h2>
         <div class="info-body">
             <p><strong>Geometría:</strong> <span id="info-type">---</span></p>
-            <p><strong>Altura:</strong> <span id="info-height">---</span></p>
+            <p><strong>Crecimiento actual:</strong> <span id="info-growth">0</span>%</p>
             <p><strong>Descripción:</strong> <span id="info-desc">---</span></p>
+        </div>
+    </div>
+
+    <!-- Modal del Cuestionario -->
+    <div id="qa-modal" class="hidden">
+        <div class="qa-content">
+            <button id="btn-close-qa">Cerrar Cuestionario</button>
+            <h2>Cuestionario Práctica 04</h2>
+            
+            <div class="qa-scroll">
+                <h3>¿Qué tema representa tu simulador de crecimiento?</h3>
+                <p>Representa un visor educativo botánico enfocado en el ciclo de vida del Agave tequila variedad azul, mostrando sus etapas de desarrollo (Piña -> Pencas -> Quiote).</p>
+
+                <h3>¿Cómo implementaste el bucle de animación con requestAnimationFrame?</h3>
+                <p>Creé la función animate() que se llama a sí misma recursivamente. Utilicé THREE.Clock para obtener el delta (tiempo entre frames) y así independizar la velocidad de la animación, sumando ese delta a mis propias variables currentGrowthTime y currentWindTime.</p>
+
+                <h3>¿Cómo animaste el crecimiento de la planta? (escala, posición, rotación)</h3>
+                <p>Modificando la propiedad .scale de los objetos en 3 fases secuenciales. Utilicé las funciones matemáticas Math.min y Math.max para interpolar el tamaño desde (0.001) hasta (1,1,1) de forma suave, ajustando previamente el punto de anclaje con .translate para que brotaran desde el suelo.</p>
+
+                <h3>¿Cómo simulaste el viento? ¿Usaste shaders o transformaciones simples?</h3>
+                <p>Utilicé transformaciones simples matemáticas en JavaScript. Apliqué una función Math.sin(currentWindTime) sobre el eje Z de rotación de cada penca, aplicando un pequeño offset basado en el índice del arreglo para que las hojas se movieran de forma orgánica y desfasada.</p>
+
+                <h3>¿Qué controles agregaste para modificar la simulación?</h3>
+                <p>Agregué una interfaz HTML superpuesta conectada mediante EventListeners. Incluye sliders de velocidad y viento, y botones para pausar/reanudar tiempos, reiniciar el modelo, simular sequía (cambio de material) y reiniciar la cámara.</p>
+
+                <h3>¿Cómo gestionaste la jerarquía para que el crecimiento se propague?</h3>
+                <p>Creé un grupo general agaveGroup. Dentro metí la Piña, el Quiote y un subgrupo pencasGroup. Al escalar pencasGroup, todas las hojas crecen simultáneamente desde sus posiciones ancladas.</p>
+
+                <h3>¿Qué shader personalizado usaste (si aplica) y qué efecto produce?</h3>
+                <p>No aplica, la simulación de movimiento y físicas orgánicas se realizó íntegramente mediante transformaciones matemáticas en el Main Thread (JavaScript).</p>
+
+                <h3>¿Qué parte del proyecto fue la más difícil?</h3>
+                <p>Ajustar los pivotes de las geometrías (como desplazar la esfera de la piña con translate) para que al escalar desde cero, la planta brotara visualmente desde el nivel del suelo (y=0) y no se encogiera hacia su centro geométrico flotando en el aire.</p>
+
+                <h3>¿Cómo podrías mejorar este simulador si lo conectaras después con PHP, FlightPHP y SQLite?</h3>
+                <p>Podría crear una base de datos SQLite con un catálogo de distintas especies de plantas (Ej. Agave Espadín, Salmiana). FlightPHP serviría como API REST para que mi frontend consulte los parámetros específicos de cada especie (tiempo de maduración, colores, altura máxima) e inyecte esos datos al main.js dinámicamente.</p>
+            </div>
         </div>
     </div>
 

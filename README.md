@@ -1,24 +1,22 @@
-# Práctica 03 - Plantas 3D: Simulador de Agave Azul
+# Práctica 04 - Simulador de Crecimiento de Agave Azul
 
 **Autor:** Chavarin & Godinez  
 **Materia:** Bioinformática y Biología Computacional Avanzados
 
 ## Descripción del Proyecto
-Este proyecto es una representación 3D interactiva del ciclo biológico del *Agave tequilana Weber variedad azul* [version beta]. En lugar de un escenario genérico, la escena aísla una única planta central sobre su terreno, demostrando el uso de geometrías primitivas, agrupaciones jerárquicas y eventos de raycasting en **Three.js**.
+Este proyecto evoluciona la representación estática del *Agave tequilana Weber variedad azul* hacia un **simulador de crecimiento dinámico**. Utilizando el bucle de renderizado de Three.js, el usuario puede observar y controlar en tiempo real cómo la planta se desarrolla desde su etapa inicial (brote de la piña), seguido del crecimiento de su follaje (pencas), hasta la maduración final con el brote del tallo floral (quiote).
 
-## Cumplimiento de Requisitos
-*   **Tema:** El proceso biológico de crecimiento del Agave azul.
-*   **Geometrías Utilizadas (Mínimo 3):**
-    *   **Esferas:** Modificadas mediante escalado para representar la *Piña*.
-    *   **Cilindros:** Utilizados tanto para el terreno base como para representar el *Quiote*, un cilindro texturizado de hasta 5 metros de altura.
-    *   **Conos:** Utilizados y generados mediante bucles for anidados para formar múltiples capas de *Pencas*.
-*   **Jerarquías:** Se utilizó `THREE.Group` para agrupar todas las pencas (`pencasGroup`), las cuales a su vez pertenecen al grupo global de la planta (`agaveGroup`).
-*   **Interacción y Lógica:** 
-    *   **Raycasting:** Al hacer clic en las partes, el panel muestra la información.
-    *   **Controles UI:** El botón de "Simular Sequía" transiciona el color de las hojas, debido a que si se presenta sequía constante, la planta detiene su crecimiento y las pencas toman un tono rojizo.
-    *   El suelo está renderizado con colores rojizos (simulando la tierra rica en hierro de Los Altos de Jalisco).
+## Cumplimiento de Requisitos (Práctica 04)
+* **Bucle de Animación:** Implementado mediante `requestAnimationFrame` y `THREE.Clock` para un crecimiento fluido basado en deltas de tiempo.
+* **Simulación de Crecimiento (Escala):** Animación progresiva mediante interpolación matemática de las propiedades `.scale` en las jerarquías (Piña → Pencas → Quiote).
+* **Físicas de Viento (Rotación):** Se aplicaron oscilaciones sinusoidales (`Math.sin`) sobre el eje Z de los pivotes individuales de las pencas para simular viento orgánico.
+* **Interfaz HTML/CSS:** 
+  * Sliders para controlar la velocidad de crecimiento y la intensidad del viento.
+  * Botones de control para pausar/reanudar físicas, reiniciar la planta, simular sequía (cambio de material) y reiniciar cámara.
+  * Botón interactivo para visualizar el cuestionario técnico de la práctica.
+* **Raycasting Dinámico:** El panel de información ahora calcula y muestra el porcentaje de crecimiento (0% a 100%) en tiempo real del objeto seleccionado.
 
 ## Cómo Ejecutar
 1. Clonar el repositorio.
-2. Iniciar un servidor local (Ej. extensión Live Server en VS Code o usando XAMPP).
+2. Iniciar un servidor local (Ej. extensión Live Server en VS Code).
 3. Abrir el archivo `index.html` en el navegador.
